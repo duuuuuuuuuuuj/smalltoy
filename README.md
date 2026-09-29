@@ -6,17 +6,20 @@
 
 - 实时监控 Claude Code 会话状态（思考/编码/执行/完成）
 - 像素精灵图动画系统，8方向朝向
-- 3 款猫咪皮肤（灰猫、白猫、橘猫），支持自定义皮肤
+- 4 款皮肤（灰猫、白猫、橘猫、二次元拟物娘），支持自定义皮肤
+- 每皮肤独立缩放 + 高清降采样，小尺寸下保持清晰，可裁切只显示上半身
 - 自主行为系统：走动、小憩、洗脸、伸懒腰、观察周围
 - 养成系统：喂食（胡萝卜/小鱼干/牛奶）、经验成长、随机事件
 - 装饰系统：可放置、拖拽的桌面装饰物
 - 系统托盘驻留，双击托盘图标显示/隐藏
+- 状态音效（WebAudio 合成，随状态切换）
+- DeepSeek 余额显示：填入 API Key 后点击人物即可查看余额与今日用量
 - 设置持久化，支持自定义动画速度和行为映射
 - 配置窗口：皮肤切换、动画预览、行为调整
 
 ## 下载安装
 
-前往 [Releases](https://github.com/Carliber/claude-pet/releases/latest) 下载最新版本：
+前往 [Releases](https://github.com/duuuuuuuuuuuj/smalltoy/releases) 下载最新版本：
 
 1. 下载对应平台的压缩包
 2. 解压到任意目录
@@ -43,6 +46,13 @@ npm run build:mac-arm  # macOS Apple Silicon
 
 打包产物输出到 `dist/` 目录。
 
+## 配置 DeepSeek 余额显示
+
+1. 右键托盘图标或点击宠物的菜单按钮，打开配置窗口，切到 **DeepSeek** 标签页
+2. 打开「显示余额面板」开关，并在 **API Key** 输入框填入你的 DeepSeek key（在 platform.deepseek.com 的「API Keys」页面创建/查看）
+3. key 仅保存在本地 `~/.claude-tool-electron/pet-cache/settings.json`，用于查询 `api.deepseek.com/user/balance`
+4. 余额每 60 秒自动刷新；点击桌面宠物人物会弹出余额徽章，显示账户余额与今日用量，约 4 秒后自动隐藏；点击徽章本身可手动刷新
+
 ## 工作原理
 
 1. 启动后监听 `~/.claude/projects/` 目录下所有 JSONL 会话文件
@@ -59,8 +69,11 @@ claude-pet/
 │   │   ├── index.js    # 应用入口 + 业务逻辑
 │   │   ├── pet-window.js
 │   │   ├── config-window.js
+│   │   ├── skin-picker-window.js
 │   │   ├── settings.js
 │   │   └── tray-manager.js
+│   ├── deepseek/       # DeepSeek 余额监控
+│   │   └── balance-monitor.js
 │   ├── behavior/       # 行为系统
 │   │   ├── state-machine.js   # 状态机 + 方向解析
 │   │   ├── auto-walk.js       # 自主行走
@@ -84,6 +97,7 @@ claude-pet/
 │   ├── config.html     # 设置界面
 │   ├── skins/          # 皮肤精灵图
 │   └── decorations/    # 装饰物资源
+├── gen-skin.js         # 皮肤生成脚本（从三视图原图抠图合成精灵图）
 └── package.json
 ```
 
@@ -97,7 +111,13 @@ assets/skins/my_skin/
 └── sprite.png   # 精灵图
 ```
 
-`skin.json` 定义动画行列、帧数、速度。参考已有皮肤目录结构。
+`skin.json` 定义动画行列、帧数、速度，以及可选的外观参数：
+
+- `scale`：像素放大倍数（可为小数，如 `0.2`，配合高清源图在小尺寸下保持清晰）
+- `heightFactor`：显示高度裁剪比例（如 `0.5` 只显示上半身）
+- `smooth`：是否启用平滑降采样（高清精灵图缩小显示时更清晰）
+
+参考已有皮肤目录结构。
 
 ## 技术栈
 
