@@ -128,7 +128,8 @@ assets/skins/my_skin/
 
 ## 致谢
 
-灵感来源：[Joe-fly/claude-pet](https://github.com/Joe-fly/claude-pet)
+- 基于 [Carliber/claude-pet](https://github.com/Carliber/claude-pet) 二次开发
+- 灵感来源：[Joe-fly/claude-pet](https://github.com/Joe-fly/claude-pet)
 
 ## License
 
