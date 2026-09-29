@@ -1,0 +1,432 @@
+{
+  "name": "二次元拟物娘",
+  "sprite": "sprite.png",
+  "cellW": 320,
+  "cellH": 320,
+  "scale": 0.2,
+  "heightFactor": 1,
+  "smooth": true,
+  "defaultAnim": "idle",
+  "animations": {
+    "idle": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "walk_down": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "walk_up": {
+      "row": 0,
+      "col": 3,
+      "count": 1,
+      "speed": 300
+    },
+    "walk_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "walk_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "walk_left_down": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "walk_right_down": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "walk_right_up": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "walk_left_up": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "dragged": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "hind_legs": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "scratch_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "scratch_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "hiss_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "hiss_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "eat_down": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "eat_up": {
+      "row": 0,
+      "col": 3,
+      "count": 1,
+      "speed": 300
+    },
+    "eat_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "eat_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "eat_right_down": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "eat_left_down": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "eat_right_up": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "eat_left_up": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "paw_down": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "paw_up": {
+      "row": 0,
+      "col": 3,
+      "count": 1,
+      "speed": 300
+    },
+    "paw_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "paw_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "paw_right_down": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "paw_left_down": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "paw_right_up": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "paw_left_up": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "sleep_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "sleep_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "sleep_2_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "sleep_2_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "sleep_3_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "sleep_3_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "sleep_4_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "sleep_4_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "meow_stand": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "meow_sit_2": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "meow_lie": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "yawn_stand": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "yawn_sit_2": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "yawn_lie": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "wash_stand": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "wash_lie": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "meow_sit": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "yawn_sit": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "wash_sit": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "sit_down": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "sit_up": {
+      "row": 0,
+      "col": 3,
+      "count": 1,
+      "speed": 300
+    },
+    "sit_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "sit_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "sit_left_down": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "sit_right_down": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "stand_down": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "stand_up": {
+      "row": 0,
+      "col": 3,
+      "count": 1,
+      "speed": 300
+    },
+    "stand_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "stand_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "stand_left_down": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "stand_right_down": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "stand_right_up": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "stand_left_up": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "lie_down": {
+      "row": 0,
+      "col": 0,
+      "count": 1,
+      "speed": 300
+    },
+    "lie_up": {
+      "row": 0,
+      "col": 3,
+      "count": 1,
+      "speed": 300
+    },
+    "lie_left": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "lie_right": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    },
+    "lie_left_down": {
+      "row": 0,
+      "col": 2,
+      "count": 1,
+      "speed": 300
+    },
+    "lie_right_down": {
+      "row": 0,
+      "col": 1,
+      "count": 1,
+      "speed": 300
+    }
+  }
+}

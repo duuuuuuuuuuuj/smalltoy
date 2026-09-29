@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>选择宠物</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1a1b26; color: #c0caf5;
+  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+  overflow-y: auto; user-select: none;
+}
+h2 { text-align: center; padding: 16px 0 8px; font-size: 16px; color: #7aa2f7; }
+.grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; padding: 12px 16px 20px; max-width: 480px; margin: 0 auto;
+}
+.cell {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 4px; border-radius: 10px; cursor: pointer;
+  border: 2px solid transparent; transition: all 0.15s;
+  background: rgba(255,255,255,0.03);
+}
+.cell:hover { background: rgba(122,162,247,0.1); border-color: rgba(122,162,247,0.3); }
+.cell.active { border-color: #7aa2f7; background: rgba(122,162,247,0.15); }
+.cell canvas { image-rendering: pixelated; margin-bottom: 6px; }
+.cell .name { font-size: 11px; color: #a9b1d6; text-align: center; }
+.cell .exp { font-size: 9px; color: #565f89; text-align: center; }
+</style>
+</head>
+<body>
+<h2>选择宠物</h2>
+<div id="exp-bar" style="text-align:center;font-size:11px;color:#565f89;padding-bottom:6px;"></div>
+<div class="grid" id="grid"></div>
+<script>
+var grid = document.getElementById('grid');
+var currentSkin = '';
+var animatedPets = [];
+
+function drawPetFrame(canvas, petData, frameIdx) {
+  if (!petData || !petData.frames || frameIdx >= petData.frames.length) return;
+  var ctx = canvas.getContext('2d');
+  var size = petData.size || [32, 32];
+  var frame = petData.frames[frameIdx];
+  var pixels = frame.pixels;
+  var palette = petData.palette;
+  var cw = canvas.width, ch = canvas.height;
+  var scale = Math.floor(Math.min(cw / size[0], ch / size[1]));
+  var ox = Math.floor((cw - size[0] * scale) / 2);
+  var oy = Math.floor((ch - size[1] * scale) / 2);
+  ctx.clearRect(0, 0, cw, ch);
+  for (var y = 0; y < size[1]; y++) {
+    for (var x = 0; x < size[0]; x++) {
+      var rgba = palette[pixels[y][x]];
+      if (!rgba || rgba[3] === 0) continue;
+      ctx.fillStyle = 'rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',' + (rgba[3]/255) + ')';
+      ctx.fillRect(ox + x * scale, oy + y * scale, scale, scale);
+    }
+  }
+}
+
+function animatePets() {
+  for (var i = 0; i < animatedPets.length; i++) {
+    var p = animatedPets[i];
+    if (p.totalFrames <= 1) continue;
+    p.currentFrame = (p.currentFrame + 1) % p.totalFrames;
+    drawPetFrame(p.canvas, p.petData, p.currentFrame);
+  }
+}
+
+if (window.electronAPI) {
+  window.electronAPI.getSkinList().then(function(data) {
+    currentSkin = data.current;
+    var exp = data.exp || 0;
+    var stageNames = [
+      { min: 0, name: '幼年' }, { min: 500, name: '少年' }, { min: 2000, name: '成年' }
+    ];
+    var stage = '幼年';
+    for (var si = 0; si < stageNames.length; si++) {
+      if (exp >= stageNames[si].min) stage = stageNames[si].name;
+    }
+    document.getElementById('exp-bar').textContent = stage + ' | EXP: ' + exp;
+    for (var i = 0; i < data.skins.length; i++) {
+      var skin = data.skins[i];
+      var cell = document.createElement('div');
+      cell.className = 'cell' + (skin.id === currentSkin ? ' active' : '');
+      var canvas = document.createElement('canvas');
+      canvas.width = 64; canvas.height = 64;
+      drawPetFrame(canvas, skin.petData, 0);
+      var totalFrames = (skin.petData && skin.petData.frames) ? skin.petData.frames.length : 1;
+      if (totalFrames > 1) {
+        animatedPets.push({ canvas: canvas, petData: skin.petData, currentFrame: 0, totalFrames: totalFrames });
+      }
+      var name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = skin.label;
+      cell.appendChild(canvas);
+      cell.appendChild(name);
+      cell.dataset.id = skin.id;
+      cell.addEventListener('click', function() {
+        var id = this.dataset.id;
+        window.electronAPI.selectSkin(id);
+        document.querySelectorAll('.cell').forEach(function(c) { c.classList.remove('active'); });
+        this.classList.add('active');
+        currentSkin = id;
+      });
+      grid.appendChild(cell);
+    }
+    if (animatedPets.length > 0) {
+      setInterval(animatePets, 500);
+    }
+  });
+}
+</script>
+</body>
+</html>

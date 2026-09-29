@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Claude Pet</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: transparent; overflow: hidden; font-family: "Microsoft YaHei", "Segoe UI", sans-serif; user-select: none; }
+.pet-root { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; position: absolute; bottom: 0; left: 0; right: 0; }
+.pet-root.compact { padding: 4px; }
+.pet-wrap { position: relative; z-index: 2; filter: drop-shadow(0 4px 12px rgba(100,149,237,0.3)); }
+.pet-wrap.stat-warning { filter: drop-shadow(0 4px 12px rgba(255,80,80,0.5)); }
+.pet-wrap.anim-idle { animation: idle-float 2.5s ease-in-out infinite; }
+.pet-wrap.anim-pulse { animation: pulse 0.7s ease-in-out infinite; }
+.pet-wrap.anim-bounce { animation: bounce 0.5s ease-in-out infinite; }
+.pet-wrap.anim-shake { animation: shake 0.15s ease-in-out infinite; }
+#pet-canvas { display: block; image-rendering: pixelated; cursor: pointer; }
+body { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35); border-radius: 3px; }
+
+/* Bubble */
+.bubble-wrap { display: flex; flex-direction: column; gap: 4px; align-items: center; opacity: 0; transition: opacity 0.3s; z-index: 2; margin-bottom: 6px; }
+.bubble-wrap.visible { opacity: 1; }
+.bubble-wrap.hidden { display: none; }
+.bubble-arrow { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 4px solid rgba(255,255,255,0.95); margin: 0 auto; }
+.bubble { background: rgba(255,255,255,0.95); border-radius: 2px; padding: 4px 8px; font-size: 11px; color: #1e293b; line-height: 1.3; word-wrap: break-word; border: 2px solid rgba(30,41,59,0.15); box-shadow: 2px 2px 0 rgba(0,0,0,0.1); white-space: normal; text-align: center; max-width: 120px; }
+.bubble.event-bubble { background: rgba(255,243,205,0.95); border-color: rgba(180,130,50,0.3); color: #92400e; }
+.bubble-item { display: flex; flex-direction: column; align-items: center; }
+
+/* Balance badge */
+.balance-badge { display: flex; flex-direction: column; align-items: center; gap: 1px; background: rgba(240,249,255,0.95); border: 2px solid rgba(37,99,235,0.25); border-radius: 2px; padding: 3px 8px; font-size: 10px; color: #0c4a6e; line-height: 1.25; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); text-align: center; max-width: 150px; cursor: pointer; z-index: 2; margin-bottom: 4px; }
+.balance-badge .b-bal { font-weight: bold; color: #0369a1; }
+.balance-badge .b-used { color: #b45309; }
+.balance-badge.hidden { display: none; }
+.balance-badge.error { border-color: rgba(220,38,38,0.4); color: #991b1b; }
+
+/* Tooltip */
+.tooltip { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 6px; background: rgba(30,41,59,0.92); border-radius: 8px; padding: 8px 10px; min-width: 130px; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.2s; font-size: 11px; color: #e2e8f0; }
+.tooltip.show { opacity: 1; }
+.tooltip .stat-row { display: flex; align-items: center; gap: 4px; margin: 2px 0; }
+.tooltip .stat-label { width: 28px; text-align: right; }
+.tooltip .stat-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden; }
+.tooltip .stat-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.tooltip .stat-fill.hunger { background: #f59e0b; }
+.tooltip .stat-fill.happiness { background: #ec4899; }
+.tooltip .stat-fill.energy { background: #3b82f6; }
+.tooltip .stat-val { width: 26px; text-align: right; }
+.tooltip .growth-info { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.15); text-align: center; font-size: 10px; color: #94a3b8; }
+.pet-root.compact .tooltip { display: none; }
+
+/* Edit mode */
+#edit-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
+#edit-canvas.active { pointer-events: auto; cursor: crosshair; }
+.edit-toolbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; gap: 8px; padding: 8px 12px; background: rgba(30,41,59,0.92); border-radius: 10px; z-index: 100; flex-wrap: wrap; max-width: 90vw; justify-content: center; }
+.edit-toolbar.active { display: flex; }
+.edit-toolbar .deco-item { width: 40px; height: 40px; border: 2px solid transparent; border-radius: 6px; cursor: pointer; image-rendering: pixelated; background: rgba(255,255,255,0.1); padding: 2px; }
+.edit-toolbar .deco-item:hover { border-color: #60a5fa; background: rgba(255,255,255,0.2); }
+.edit-toolbar .deco-item.selected { border-color: #3b82f6; background: rgba(59,130,246,0.3); }
+.edit-toolbar .deco-item canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+.edit-close-btn { position: fixed; top: 20px; right: 20px; padding: 6px 14px; background: rgba(239,68,68,0.9); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; z-index: 100; display: none; }
+.edit-close-btn.active { display: block; }
+
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+@keyframes idle-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+.pet-root.compact .menu-btn { display: none; }
+.menu-btn { position: absolute; top: 2px; right: 2px; z-index: 10; width: 20px; height: 20px; border: none; border-radius: 50%; background: rgba(255,255,255,0.5); color: #64748b; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+.pet-root:hover .menu-btn { opacity: 1; }
+.menu-btn:hover { background: rgba(255,255,255,0.85); }
+</style>
+</head>
+<body>
+<canvas id="edit-canvas"></canvas>
+<button class="edit-close-btn" id="edit-close-btn">退出编辑</button>
+<div class="edit-toolbar" id="edit-toolbar"></div>
+
+<div class="pet-root" id="pet-root">
+  <button class="menu-btn" id="menu-btn">&#9881;</button>
+  <div class="balance-badge hidden" id="balance-badge"></div>
+  <div class="bubble-wrap" id="bubble-wrap"></div>
+  <div class="pet-wrap" id="pet-wrap">
+    <canvas id="pet-canvas" width="96" height="76"></canvas>
+    <div class="tooltip" id="tooltip">
+      <div class="stat-row"><span class="stat-label">饱腹</span><div class="stat-bar"><div class="stat-fill hunger" id="hunger-bar"></div></div><span class="stat-val" id="hunger-val"></span></div>
+      <div class="stat-row"><span class="stat-label">快乐</span><div class="stat-bar"><div class="stat-fill happiness" id="happiness-bar"></div></div><span class="stat-val" id="happiness-val"></span></div>
+      <div class="stat-row"><span class="stat-label">精力</span><div class="stat-bar"><div class="stat-fill energy" id="energy-bar"></div></div><span class="stat-val" id="energy-val"></span></div>
+      <div class="growth-info" id="growth-info"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('pet-canvas');
+const ctx = canvas.getContext('2d');
+const nativeCanvas = document.createElement('canvas');
+const nativeCtx = nativeCanvas.getContext('2d');
+const editCanvas = document.getElementById('edit-canvas');
+const editCtx = editCanvas.getContext('2d');
+const bubbleWrap = document.getElementById('bubble-wrap');
+const balanceBadge = document.getElementById('balance-badge');
+const petRoot = document.getElementById('pet-root');
+const petWrap = document.getElementById('pet-wrap');
+const tooltip = document.getElementById('tooltip');
+const editToolbar = document.getElementById('edit-toolbar');
+const editCloseBtn = document.getElementById('edit-close-btn');
+
+let currentState = 'IDLE';
+let currentSkin = 'cat';
+let skinCache = {};
+let currentFrame = 0;
+let animTimer = null;
+let bubbleOverrideUntil = 0;
+let eventBubbleText = null;
+let currentSessions = [];
+let lastBubbleKey = '';
+let currentPetData = null;
+let editMode = false;
+let selectedDecoId = null;
+let placedDecorations = [];
+let decoCatalog = [];
+let draggedDecoId = null;
+let currentSettings = {};
+let currentBalance = null;
+
+const PIXEL_SCALE = 3;
+const DECO_SCALE = 3;
+
+function resizeCanvas(spriteW, spriteH, sc, hf) {
+  var cw = spriteW * sc;
+  var ch = Math.round(spriteH * sc * hf);
+  canvas.width = cw; canvas.height = ch;
+  canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+}
+
+const STATUS_MESSAGES = {
+  THINKING: ['让我想想...', '思考中...', '大脑运转中...'],
+  ANALYZING: ['深入分析中...', '解析中...'],
+  CODING: ['正在写代码...', 'Coding中...'],
+  EXECUTING: ['执行命令中...', '运行ing...'],
+  USING_TOOLS: ['子代理运行中...', '调度代理中...'],
+  DONE: ['搞定!', '完成啦!', '大功告成!'],
+  ERROR: ['哎呀，出错了...', '呜呜...'],
+  WAITING_INPUT: ['需要你的选择...', '等你决定~', '请选择...'],
+  HAPPY: ['太棒了!', '嘿嘿~'],
+  SLEEPING: ['呼噜呼噜...', 'ZZZ...'],
+  WALKING: ['散步中~', '到处逛逛~', '溜达溜达~'],
+  EATING: ['好好吃~', '啃啃啃~'],
+  PLAYING: ['好好玩~', '嘻嘻~'],
+  DRAGGED: ['不要拉我~', '放手~'],
+  GREETING: ['嗨~', '你好呀~'],
+};
+
+function renderBubbles(sessions, state) {
+  if (bubbleWrap.classList.contains('hidden')) { resizeToContent(); return; }
+  bubbleWrap.classList.remove('hidden');
+  bubbleWrap.classList.add('visible');
+  var hasEvent = Date.now() < bubbleOverrideUntil && eventBubbleText;
+  if (!sessions || sessions.length === 0) {
+    var soloMsg = (STATUS_MESSAGES[state] || STATUS_MESSAGES.IDLE)[0];
+    var key = 'solo:' + state + (hasEvent ? '+evt:' + eventBubbleText : '');
+    if (key === lastBubbleKey) return;
+    lastBubbleKey = key;
+    bubbleWrap.innerHTML = '';
+    if (hasEvent) bubbleWrap.appendChild(createBubbleEl(eventBubbleText, true, false));
+    bubbleWrap.appendChild(createBubbleEl(soloMsg, false, true));
+    resizeToContent();
+    return;
+  }
+  var multi = sessions.length > 1;
+  var key = sessions.map(function(s) { return s.project + ':' + s.state; }).join('|') + (hasEvent ? '+evt:' + eventBubbleText : '');
+  if (key === lastBubbleKey) return;
+  lastBubbleKey = key;
+  bubbleWrap.innerHTML = '';
+  if (hasEvent) bubbleWrap.appendChild(createBubbleEl(eventBubbleText, true, false));
+  for (var i = 0; i < sessions.length; i++) {
+    var s = sessions[i];
+    var msgs = STATUS_MESSAGES[s.state] || STATUS_MESSAGES.IDLE;
+    var text = msgs[0];
+    if (multi) text = '[' + s.project + '] ' + text;
+    var isLast = (i === sessions.length - 1);
+    bubbleWrap.appendChild(createBubbleEl(text, false, isLast));
+  }
+  resizeToContent();
+}
+
+function resizeToContent() {
+  var petW = canvas.width;
+  var petH = canvas.height;
+  var bubbleHidden = bubbleWrap.classList.contains('hidden');
+  var bubbleH = bubbleHidden ? 0 : bubbleWrap.offsetHeight;
+  var bubbleSW = bubbleHidden ? 0 : bubbleWrap.scrollWidth;
+  var balanceHidden = balanceBadge.classList.contains('hidden');
+  var balanceH = balanceHidden ? 0 : balanceBadge.offsetHeight + 4;
+  var balanceSW = balanceHidden ? 0 : balanceBadge.scrollWidth;
+  var totalW = Math.max(petW, bubbleSW, balanceSW) + 8;
+  var totalH = petH + bubbleH + balanceH + 6;
+  if (window.electronAPI && window.electronAPI.resizeToContent) {
+    window.electronAPI.resizeToContent(totalW, totalH);
+  }
+}
+
+function createBubbleEl(text, isEvent, showArrow) {
+  var div = document.createElement('div');
+  div.className = 'bubble' + (isEvent ? ' event-bubble' : '');
+  div.textContent = text;
+  var wrap = document.createElement('div');
+  wrap.className = 'bubble-item';
+  wrap.appendChild(div);
+  if (showArrow) {
+    var arrow = document.createElement('div');
+    arrow.className = 'bubble-arrow';
+    wrap.appendChild(arrow);
+  }
+  return wrap;
+}
+
+const ANIM_MAP = {
+  IDLE: 'anim-idle', THINKING: 'anim-pulse', ANALYZING: 'anim-pulse',
+  CODING: 'anim-bounce', EXECUTING: 'anim-shake',
+  USING_TOOLS: 'anim-pulse', DONE: 'anim-bounce',
+  ERROR: 'anim-shake', HAPPY: 'anim-bounce', SLEEPING: 'anim-idle',
+  WALKING: 'anim-idle', EATING: 'anim-bounce', PLAYING: 'anim-bounce',
+  DRAGGED: 'anim-shake', GREETING: 'anim-pulse',
+};
+
+const STAGE_BADGES = {
+  baby: { color: [255,215,0,255], shape: [[0,1,0],[1,1,1],[0,1,0]] },
+  teen: { color: [100,149,237,255], shape: [[0,1,0],[1,1,1],[0,1,0]] },
+  adult: { color: [255,193,7,255], shape: [[0,1,1,0],[1,1,1,1],[0,1,1,0]] },
+};
+
+let nurtureData = { stats: null, growthStage: 'baby', exp: 0, equippedAccessory: null, inventory: {}, totalRuntime: 0 };
+
+// --- Skin data ---
+function loadSkinData(skinId) {
+  if (skinCache[skinId]) return skinCache[skinId];
+  if (window.electronAPI && window.electronAPI.getSkinData) {
+    var data = window.electronAPI.getSkinData(skinId);
+    if (data) { skinCache[skinId] = data; return data; }
+  }
+  return null;
+}
+
+// --- Drawing ---
+function drawGrowthBadge(stage) {
+  var badge = STAGE_BADGES[stage];
+  if (!badge) return;
+  var s = 1, ox = canvas.width - badge.shape[0].length * s - 1, oy = 1;
+  var c = badge.color;
+  ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (c[3]/255) + ')';
+  for (var y = 0; y < badge.shape.length; y++)
+    for (var x = 0; x < badge.shape[y].length; x++)
+      if (badge.shape[y][x]) ctx.fillRect(ox + x * s, oy + y * s, s, s);
+}
+
+function drawAccessory(acc) {
+  if (!acc || !acc.pixels || !acc.palette) return;
+  var ox = acc.offsetX * PIXEL_SCALE, oy = acc.offsetY * PIXEL_SCALE;
+  for (var y = 0; y < acc.height; y++)
+    for (var x = 0; x < acc.width; x++) {
+      var key = acc.pixels[y][x];
+      if (key === '.') continue;
+      var rgba = acc.palette[key];
+      if (!rgba || rgba[3] === 0) continue;
+      ctx.fillStyle = 'rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',' + (rgba[3]/255) + ')';
+      ctx.fillRect(ox + x * PIXEL_SCALE, oy + y * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+    }
+}
+
+function drawFrame(petData, frameIdx) {
+  if (!petData || !petData.frames || frameIdx >= petData.frames.length) return;
+  currentPetData = petData;
+  var frame = petData.frames[frameIdx];
+  var pixels = frame.pixels, palette = petData.palette, size = petData.size || [32,32];
+  var sc = petData.scale || PIXEL_SCALE;
+  var hf = (petData.heightFactor != null) ? petData.heightFactor : 0.79;
+  var cw = Math.round(size[0] * sc), ch = Math.round(size[1] * sc * hf);
+  if (canvas.width !== cw || canvas.height !== ch) resizeCanvas(size[0], size[1], sc, hf);
+
+  if (petData.smooth) {
+    // 高分辨率源图 → 平滑缩放到目标小尺寸（Retina 思路，小尺寸也清晰）
+    if (nativeCanvas.width !== size[0] || nativeCanvas.height !== size[1]) {
+      nativeCanvas.width = size[0]; nativeCanvas.height = size[1];
+    }
+    var nImg = nativeCtx.createImageData(size[0], size[1]);
+    var nd = nImg.data;
+    for (var y = 0; y < size[1]; y++)
+      for (var x = 0; x < size[0]; x++) {
+        var nr = palette[pixels[y][x]];
+        if (!nr || nr[3] === 0) continue;
+        var ni = (y * size[0] + x) * 4;
+        nd[ni] = nr[0]; nd[ni + 1] = nr[1]; nd[ni + 2] = nr[2]; nd[ni + 3] = nr[3];
+      }
+    nativeCtx.putImageData(nImg, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.drawImage(nativeCanvas, 0, 0, size[0], size[1], 0, 0, cw, Math.round(size[1] * sc));
+  } else {
+    var imgData = ctx.createImageData(cw, ch);
+    var data = imgData.data;
+    for (var y = 0; y < size[1]; y++)
+      for (var x = 0; x < size[0]; x++) {
+        var colorKey = pixels[y][x];
+        var rgba = palette[colorKey];
+        if (!rgba || rgba[3] === 0) continue;
+        for (var sy = 0; sy < sc; sy++)
+          for (var sx = 0; sx < sc; sx++) {
+            var idx = ((y * sc + sy) * cw + x * sc + sx) * 4;
+            data[idx] = rgba[0]; data[idx + 1] = rgba[1];
+            data[idx + 2] = rgba[2]; data[idx + 3] = rgba[3];
+          }
+      }
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.putImageData(imgData, 0, 0);
+  }
+  drawGrowthBadge(nurtureData.growthStage);
+  if (nurtureData.equippedAccessory) drawAccessory(nurtureData.equippedAccessory);
+}
+
+function startAnimation(skinId) { startAnimationFromData(loadSkinData(skinId)); }
+
+function startAnimationFromData(petData) {
+  clearInterval(animTimer);
+  if (!petData || !petData.frames || petData.frames.length <= 1) { currentFrame = 0; drawFrame(petData, 0); return; }
+  currentFrame = 0;
+  drawFrame(petData, 0);
+  animTimer = setInterval(function() {
+    currentFrame = (currentFrame + 1) % petData.frames.length;
+    drawFrame(petData, currentFrame);
+  }, petData.speed || 500);
+}
+
+// --- Decoration drawing ---
+function drawDecorations() {
+  editCtx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+  for (var i = 0; i < placedDecorations.length; i++) {
+    var d = placedDecorations[i];
+    if (!d.animData || !d.animData.frames || !d.animData.frames[0]) continue;
+    var frame = d.animData.frames[0];
+    var palette = d.animData.palette;
+    var size = d.animData.size || [32, 32];
+    for (var y = 0; y < size[1]; y++)
+      for (var x = 0; x < size[0]; x++) {
+        var key = frame.pixels[y][x];
+        var rgba = palette[key];
+        if (!rgba || rgba[3] === 0) continue;
+        editCtx.fillStyle = 'rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',' + (rgba[3]/255) + ')';
+        editCtx.fillRect(d.x + x * DECO_SCALE, d.y + y * DECO_SCALE, DECO_SCALE, DECO_SCALE);
+      }
+    if (editMode && draggedDecoId === d.id) {
+      editCtx.strokeStyle = 'rgba(59,130,246,0.6)';
+      editCtx.strokeRect(d.x - 2, d.y - 2, size[0] * DECO_SCALE + 4, size[1] * DECO_SCALE + 4);
+    }
+  }
+}
+
+// --- Edit mode ---
+function enterEditMode(catalog) {
+  editMode = true;
+  decoCatalog = catalog || [];
+  editCanvas.classList.add('active');
+  editToolbar.classList.add('active');
+  editCloseBtn.classList.add('active');
+  resizeEditCanvas();
+  buildToolbar();
+  drawDecorations();
+}
+
+function exitEditMode() {
+  editMode = false;
+  selectedDecoId = null;
+  editCanvas.classList.remove('active');
+  editToolbar.classList.remove('active');
+  editCloseBtn.classList.remove('active');
+  editCtx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+  if (window.electronAPI && window.electronAPI.decoEditToggle) {
+    window.electronAPI.decoEditToggle(false);
+  }
+}
+
+function resizeEditCanvas() {
+  editCanvas.width = window.screen.width;
+  editCanvas.height = window.screen.height;
+}
+
+function buildToolbar() {
+  editToolbar.innerHTML = '';
+  for (var i = 0; i < decoCatalog.length; i++) {
+    (function(item) {
+      var div = document.createElement('div');
+      div.className = 'deco-item';
+      div.title = item.label || item.id;
+      var c = document.createElement('canvas');
+      c.width = 32; c.height = 32;
+      var ct = c.getContext('2d');
+      if (item.animData && item.animData.frames[0]) {
+        var frame = item.animData.frames[0];
+        var palette = item.animData.palette;
+        var size = item.animData.size || [32, 32];
+        var s = Math.floor(32 / size[0]);
+        for (var y = 0; y < size[1]; y++)
+          for (var x = 0; x < size[0]; x++) {
+            var key = frame.pixels[y][x];
+            var rgba = palette[key];
+            if (!rgba || rgba[3] === 0) continue;
+            ct.fillStyle = 'rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',' + (rgba[3]/255) + ')';
+            ct.fillRect(x * s, y * s, s, s);
+          }
+      }
+      div.appendChild(c);
+      div.addEventListener('click', function() {
+        selectedDecoId = item.id;
+        document.querySelectorAll('.deco-item').forEach(function(el) { el.classList.remove('selected'); });
+        div.classList.add('selected');
+      });
+      editToolbar.appendChild(div);
+    })(decoCatalog[i]);
+  }
+}
+
+editCloseBtn.addEventListener('click', exitEditMode);
+
+editCanvas.addEventListener('click', function(e) {
+  if (!editMode || !selectedDecoId) return;
+  if (window.electronAPI && window.electronAPI.decoPlace) {
+    window.electronAPI.decoPlace({ catalogId: selectedDecoId, screenX: e.clientX, screenY: e.clientY });
+  }
+});
+
+window.addEventListener('resize', function() {
+  if (editMode) resizeEditCanvas();
+});
+
+// --- Status ---
+function applySettings(settings) {
+  currentSettings = settings || {};
+  if (settings.skin) { currentSkin = settings.skin; startAnimation(currentSkin); }
+  if (settings.showBubble === false) bubbleWrap.classList.add('hidden');
+  else bubbleWrap.classList.remove('hidden');
+  if (settings.showTooltip === false) tooltip.style.display = 'none';
+  else tooltip.style.display = '';
+  if (settings.compact) petRoot.classList.add('compact');
+  else petRoot.classList.remove('compact');
+  if (settings.statusMessages) {
+    for (var k in settings.statusMessages) STATUS_MESSAGES[k] = settings.statusMessages[k];
+  }
+  if (currentBalance) applyBalance(currentBalance);
+}
+
+function setStatus(data) {
+  var state = (typeof data === 'object' && data.state) ? data.state : data;
+  var animData = (typeof data === 'object' && data.animData) ? data.animData : null;
+  var sessions = (typeof data === 'object' && data.sessions) ? data.sessions : [];
+  currentState = state;
+  currentSessions = sessions;
+  // Canvas 动画由 behavior 独占控制
+  if (animData) { currentPetData = animData; startAnimationFromData(animData); }
+  if (nurtureData.stats) {
+    var minStat = Math.min(nurtureData.stats.hunger, nurtureData.stats.happiness, nurtureData.stats.energy);
+    if (minStat < 20) petWrap.classList.add('stat-warning');
+  }
+  // Claude 状态驱动多气泡
+  renderBubbles(sessions, state);
+}
+
+function updateTooltip(data) {
+  if (!data || !data.stats) return;
+  var s = data.stats;
+  document.getElementById('hunger-bar').style.width = s.hunger + '%';
+  document.getElementById('hunger-val').textContent = s.hunger;
+  document.getElementById('happiness-bar').style.width = s.happiness + '%';
+  document.getElementById('happiness-val').textContent = s.happiness;
+  document.getElementById('energy-bar').style.width = s.energy + '%';
+  document.getElementById('energy-val').textContent = s.energy;
+  var stageNames = { baby: '幼年', teen: '少年', adult: '成年' };
+  document.getElementById('growth-info').textContent = (stageNames[data.growthStage] || data.growthStage) + ' | EXP: ' + data.exp;
+  var minStat = Math.min(s.hunger, s.happiness, s.energy);
+  if (minStat < 20) petWrap.classList.add('stat-warning');
+  else petWrap.classList.remove('stat-warning');
+}
+
+// --- Balance ---
+var balanceRevealed = false;
+var balanceHideTimer = null;
+function applyBalance(data) {
+  currentBalance = data;
+  if (!data || !data.hasKey || currentSettings.showBalance === false || !balanceRevealed) {
+    balanceBadge.classList.add('hidden');
+    resizeToContent();
+    return;
+  }
+  balanceBadge.classList.remove('hidden');
+  if (data.error) {
+    balanceBadge.classList.add('error');
+    balanceBadge.innerHTML = '<div class="b-bal">余额获取失败</div><div class="b-used">' + data.error + '</div>';
+  } else {
+    balanceBadge.classList.remove('error');
+    var bal = data.balance != null ? '¥' + data.balance.toFixed(2) : '--';
+    var used = '今日已用 ¥' + (data.todayUsed != null ? data.todayUsed.toFixed(2) : '0.00');
+    balanceBadge.innerHTML = '<div class="b-bal">余额 ' + bal + '</div><div class="b-used">' + used + '</div>';
+  }
+  resizeToContent();
+}
+
+balanceBadge.addEventListener('click', function() {
+  if (window.electronAPI && window.electronAPI.refreshBalance) window.electronAPI.refreshBalance();
+});
+
+// --- Sound (WebAudio 合成音效) ---
+var audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+function tone(freq, dur, type, vol, when) {
+  if (!audioCtx) return;
+  var t0 = audioCtx.currentTime + (when || 0);
+  var osc = audioCtx.createOscillator();
+  var g = audioCtx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol || 0.15, t0 + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start(t0); osc.stop(t0 + dur + 0.05);
+}
+function playStateSound(state) {
+  ensureAudio();
+  if (!audioCtx) return;
+  switch (state) {
+    case 'THINKING':
+    case 'ANALYZING': tone(660, 0.12, 'sine', 0.12); break;
+    case 'CODING': tone(880, 0.05, 'square', 0.08); tone(880, 0.05, 'square', 0.08, 0.09); break;
+    case 'EXECUTING': tone(440, 0.15, 'sine', 0.14); break;
+    case 'USING_TOOLS': tone(520, 0.12, 'triangle', 0.12); break;
+    case 'DONE': tone(660, 0.12, 'sine', 0.14); tone(880, 0.18, 'sine', 0.14, 0.12); break;
+    case 'ERROR': tone(160, 0.25, 'sawtooth', 0.12); break;
+    case 'WAITING_INPUT': tone(700, 0.1, 'sine', 0.12); tone(520, 0.14, 'sine', 0.12, 0.1); break;
+    default: break;
+  }
+}
+
+// --- IPC Listeners ---
+if (window.electronAPI) {
+  window.electronAPI.onPetStatus(function(status) { setStatus(status); });
+  window.electronAPI.onSettings(function(settings) { applySettings(settings); });
+  if (window.electronAPI.onNurtureData) {
+    window.electronAPI.onNurtureData(function(data) { nurtureData = data; updateTooltip(data); });
+  }
+  var eventBubbleTimer = null;
+  if (window.electronAPI.onRandomEvent) {
+    window.electronAPI.onRandomEvent(function(data) {
+      if (eventBubbleTimer) clearTimeout(eventBubbleTimer);
+      eventBubbleText = data.text;
+      bubbleOverrideUntil = Date.now() + 5000;
+      renderBubbles(currentSessions, currentState);
+      eventBubbleTimer = setTimeout(function() {
+        if (Date.now() >= bubbleOverrideUntil) {
+          bubbleOverrideUntil = 0;
+          eventBubbleText = null;
+          eventBubbleTimer = null;
+          renderBubbles(currentSessions, currentState);
+        }
+      }, 5000);
+    });
+  }
+  if (window.electronAPI.onDecorations) {
+    window.electronAPI.onDecorations(function(data) { placedDecorations = data.decorations || []; drawDecorations(); });
+  }
+  if (window.electronAPI.onEditMode) {
+    window.electronAPI.onEditMode(function(data) {
+      if (data.active) enterEditMode(data.catalog || []);
+      else exitEditMode();
+    });
+  }
+  if (window.electronAPI.onBalance) {
+    window.electronAPI.onBalance(function(data) { applyBalance(data); });
+  }
+  if (window.electronAPI.onStateSound) {
+    window.electronAPI.onStateSound(function(data) { playStateSound(data && data.state); });
+  }
+}
+
+// --- Click / Drag ---
+var CLICK_ANIMS = ['anim-bounce','anim-pulse','anim-shake'];
+var clickAnimTimer = null;
+
+canvas.addEventListener('click', function(e) {
+  e.stopPropagation();
+  if (wasDragging) { wasDragging = false; return; }
+  triggerHearts();
+  if (window.electronAPI && window.electronAPI.sendClick) window.electronAPI.sendClick();
+  // 点击人物后才显示余额，4 秒后自动隐藏
+  balanceRevealed = true;
+  applyBalance(currentBalance);
+  if (window.electronAPI && window.electronAPI.refreshBalance) window.electronAPI.refreshBalance();
+  if (balanceHideTimer) clearTimeout(balanceHideTimer);
+  balanceHideTimer = setTimeout(function() {
+    balanceRevealed = false;
+    balanceBadge.classList.add('hidden');
+    resizeToContent();
+    balanceHideTimer = null;
+  }, 4000);
+});
+
+canvas.addEventListener('mouseenter', function() {
+  if (window.electronAPI && window.electronAPI.requestStats) {
+    window.electronAPI.requestStats().then(function(data) { if (data) updateTooltip(data); });
+  }
+  tooltip.classList.add('show');
+});
+canvas.addEventListener('mouseleave', function() { tooltip.classList.remove('show'); });
+
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+  if (window.electronAPI && window.electronAPI.showContextMenu) window.electronAPI.showContextMenu();
+});
+document.getElementById('menu-btn').addEventListener('click', function() {
+  if (window.electronAPI && window.electronAPI.showContextMenu) window.electronAPI.showContextMenu();
+});
+
+// --- Mouse capture (forward mode hover detection) ---
+var mouseCaptured = false;
+function setMouseCapture(capture) {
+  if (capture === mouseCaptured) return;
+  mouseCaptured = capture;
+  if (window.electronAPI && window.electronAPI.setIgnoreMouseEvents) window.electronAPI.setIgnoreMouseEvents(!capture);
+}
+document.addEventListener('mousemove', function(e) {
+  var el = document.elementFromPoint(e.clientX, e.clientY);
+  var over = el && (el.id === 'pet-canvas' || el.closest('.bubble-wrap') || el.closest('.menu-btn') || el.closest('.edit-toolbar') || el.closest('.balance-badge'));
+  setMouseCapture(!!over);
+});
+document.addEventListener('mouseleave', function() { setMouseCapture(false); });
+
+// --- Drag detection ---
+var dragStartX = 0, dragStartY = 0, isDragging = false, wasDragging = false;
+document.addEventListener('mousedown', function(e) {
+  if (e.button !== 0 || e.target.closest('.menu-btn') || e.target.closest('.bubble-wrap') || e.target.closest('.balance-badge')) return;
+  dragStartX = e.screenX; dragStartY = e.screenY; isDragging = false; wasDragging = false;
+});
+document.addEventListener('mousemove', function(e) {
+  if (dragStartX === 0 && dragStartY === 0) return;
+  var dx = e.screenX - dragStartX, dy = e.screenY - dragStartY;
+  if (!isDragging && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) isDragging = true;
+  if (isDragging && window.electronAPI && window.electronAPI.dragMoveTo) {
+    if (!wasDragging) { wasDragging = true; if (window.electronAPI.dragStart) window.electronAPI.dragStart(); }
+    window.electronAPI.dragMoveTo(e.screenX, e.screenY);
+  }
+});
+document.addEventListener('mouseup', function(e) {
+  if (e.button !== 0) return;
+  if (isDragging) {
+    wasDragging = true;
+    if (window.electronAPI.dragEnd) window.electronAPI.dragEnd();
+    setTimeout(function() { dragStartX = 0; dragStartY = 0; isDragging = false; resizeToContent(); }, 150);
+  } else {
+    dragStartX = 0; dragStartY = 0;
+  }
+});
+
+// --- Hearts ---
+var hearts = [];
+var HEART_PIXELS = [[0,1,1,0,1,1,0],[1,1,1,1,1,1,1],[1,1,1,1,1,1,1],[0,1,1,1,1,1,0],[0,0,1,1,1,0,0],[0,0,0,1,0,0,0]];
+var heartColors = ['#FF4D6D','#FF6B8A','#FF8FA3','#FFB3C1'];
+
+function spawnHearts(count) {
+  for (var i = 0; i < count; i++) {
+    hearts.push({ x: 40+Math.random()*40, y: 40+Math.random()*20, vy: -1.2-Math.random()*0.8, vx: (Math.random()-0.5)*0.8, alpha: 1, color: heartColors[Math.floor(Math.random()*heartColors.length)], size: 2, delay: i*3 });
+  }
+}
+
+function drawHearts() {
+  var alive = [];
+  for (var i = 0; i < hearts.length; i++) {
+    var h = hearts[i];
+    if (h.delay > 0) { h.delay--; alive.push(h); continue; }
+    h.x += h.vx; h.y += h.vy; h.alpha -= 0.025;
+    if (h.alpha <= 0) continue;
+    ctx.globalAlpha = h.alpha; ctx.fillStyle = h.color;
+    for (var py = 0; py < HEART_PIXELS.length; py++)
+      for (var px = 0; px < HEART_PIXELS[py].length; px++)
+        if (HEART_PIXELS[py][px]) ctx.fillRect(h.x + px*h.size, h.y + py*h.size, h.size, h.size);
+    alive.push(h);
+  }
+  ctx.globalAlpha = 1;
+  hearts = alive;
+}
+
+var heartRaf = null;
+function heartLoop() {
+  if (hearts.length > 0) { drawFrame(currentPetData, currentFrame); heartRaf = requestAnimationFrame(heartLoop); }
+  else { heartRaf = null; }
+}
+function triggerHearts() { spawnHearts(5); if (!heartRaf) heartRaf = requestAnimationFrame(heartLoop); }
+
+startAnimation(currentSkin);
+</script>
+</body>
+</html>

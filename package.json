@@ -1,0 +1,43 @@
+{
+  "name": "claude-pet",
+  "version": "3.1.0",
+  "description": "Claude Code 宠物浮窗",
+  "main": "src/main/index.js",
+  "author": "Carliber",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build:win": "electron-packager . \"Claude Pet\" --platform=win32 --arch=x64 --overwrite --out=dist --asar --ignore=\"node_modules/(electron|electron-builder|electron-packager)\" --ignore=dist --ignore=.claude",
+    "build:mac": "electron-packager . \"Claude Pet\" --platform=darwin --arch=x64 --overwrite --out=dist --asar --ignore=\"node_modules/(electron|electron-builder|electron-packager)\" --ignore=dist --ignore=.claude --symlink=false",
+    "build:mac-arm": "electron-packager . \"Claude Pet\" --platform=darwin --arch=arm64 --overwrite --out=dist --asar --ignore=\"node_modules/(electron|electron-builder|electron-packager)\" --ignore=dist --ignore=.claude --symlink=false"
+  },
+  "build": {
+    "appId": "com.carliber.claude-pet",
+    "productName": "Claude Pet",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**",
+      "assets/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2"
+  }
+}

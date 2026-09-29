@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>设置</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a1b26; color: #c0caf5; font-family: "Microsoft YaHei", "Segoe UI", sans-serif; overflow-y: auto; user-select: none; font-size: 13px; }
+.tabs { display: flex; border-bottom: 1px solid #2a2b3d; }
+.tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: #565f89; transition: color 0.15s, border-bottom 0.15s; border-bottom: 2px solid transparent; }
+.tab:hover { color: #a9b1d6; }
+.tab.active { color: #7aa2f7; border-bottom-color: #7aa2f7; }
+.panel { display: none; padding: 12px 16px; }
+.panel.active { display: block; }
+
+.section-title { font-size: 12px; color: #7aa2f7; margin: 12px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #2a2b3d; }
+.skin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px; }
+.skin-cell { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; background: rgba(255,255,255,0.03); transition: all 0.15s; }
+.skin-cell:hover { background: rgba(122,162,247,0.1); border-color: rgba(122,162,247,0.3); }
+.skin-cell.active { border-color: #7aa2f7; background: rgba(122,162,247,0.15); }
+.skin-cell canvas { image-rendering: pixelated; margin-bottom: 4px; }
+.skin-cell .name { font-size: 10px; color: #a9b1d6; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+.toggle-row label { color: #a9b1d6; }
+.toggle { position: relative; width: 36px; height: 20px; }
+.toggle input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 1; margin: 0; }
+.toggle .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #2a2b3d; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+.toggle .slider:before { content: ''; position: absolute; height: 16px; width: 16px; left: 2px; bottom: 2px; background: #565f89; border-radius: 50%; transition: 0.2s; }
+.toggle input:checked + .slider { background: #3b5dc9; }
+.toggle input:checked + .slider:before { transform: translateX(16px); background: #7aa2f7; }
+
+.config-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+.config-table th { text-align: left; padding: 4px 8px; color: #565f89; font-size: 11px; border-bottom: 1px solid #2a2b3d; }
+.config-table td { padding: 4px 8px; border-bottom: 1px solid rgba(42,43,61,0.5); }
+.config-table select { background: #2a2b3d; color: #c0caf5; border: 1px solid #3b3d52; border-radius: 4px; padding: 3px 6px; font-size: 12px; width: 100%; }
+.config-table input[type="text"] { background: #2a2b3d; color: #c0caf5; border: 1px solid #3b3d52; border-radius: 4px; padding: 3px 6px; font-size: 12px; width: 100%; }
+.key-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.key-row input[type="password"] { flex: 1; background: #2a2b3d; color: #c0caf5; border: 1px solid #3b3d52; border-radius: 4px; padding: 6px 8px; font-size: 12px; }
+.key-row button { padding: 6px 14px; border: none; border-radius: 4px; background: #3b5dc9; color: #fff; cursor: pointer; font-size: 12px; }
+.key-row button:hover { background: #4a6ee0; }
+.ds-hint { font-size: 11px; color: #565f89; line-height: 1.5; margin-top: 8px; }
+.ds-status { font-size: 11px; color: #7aa2f7; margin-top: 6px; min-height: 14px; }
+.speed-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.speed-row .anim-name { width: 80px; color: #a9b1d6; font-size: 12px; }
+.speed-row input[type="range"] { flex: 1; accent-color: #7aa2f7; }
+.speed-row .speed-val { width: 50px; text-align: right; color: #565f89; font-size: 11px; }
+
+.test-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+.test-btn { padding: 8px 4px; border: 1px solid #3b3d52; border-radius: 6px; background: rgba(255,255,255,0.03); color: #a9b1d6; cursor: pointer; font-size: 11px; text-align: center; transition: all 0.15s; }
+.test-btn:hover { background: rgba(122,162,247,0.1); border-color: #7aa2f7; color: #7aa2f7; }
+.test-btn.playing { background: rgba(122,162,247,0.2); border-color: #7aa2f7; color: #7aa2f7; }
+.follow-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; margin-top: 8px; border-top: 1px solid #2a2b3d; }
+.test-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(42,43,61,0.3); }
+.test-item .play-btn { padding: 4px 10px; border: 1px solid #3b3d52; border-radius: 4px; background: rgba(255,255,255,0.03); color: #a9b1d6; cursor: pointer; font-size: 11px; min-width: 70px; text-align: center; transition: all 0.15s; }
+.test-item .play-btn:hover { border-color: #7aa2f7; color: #7aa2f7; }
+.test-item .play-btn.playing { background: rgba(122,162,247,0.2); border-color: #7aa2f7; color: #7aa2f7; }
+.test-item .anim-name { width: 80px; color: #a9b1d6; font-size: 12px; }
+.test-item input[type="range"] { flex: 1; accent-color: #7aa2f7; }
+.test-item .speed-val { width: 50px; text-align: right; color: #565f89; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="tabs">
+  <div class="tab active" data-tab="basic">基本设置</div>
+  <div class="tab" data-tab="anim">动画配置</div>
+  <div class="tab" data-tab="test">测试</div>
+  <div class="tab" data-tab="deepseek">DeepSeek</div>
+</div>
+
+<div class="panel active" id="panel-basic">
+  <div class="section-title">选择皮肤</div>
+  <div class="skin-grid" id="skin-grid"></div>
+  <div class="section-title">显示选项</div>
+  <div class="toggle-row"><label>显示状态气泡</label><div class="toggle"><input type="checkbox" id="opt-bubble"><span class="slider"></span></div></div>
+  <div class="toggle-row"><label>显示状态栏</label><div class="toggle"><input type="checkbox" id="opt-tooltip"><span class="slider"></span></div></div>
+  <div class="toggle-row"><label>自主行走</label><div class="toggle"><input type="checkbox" id="opt-autowalk"><span class="slider"></span></div></div>
+</div>
+
+<div class="panel" id="panel-anim">
+  <div class="section-title">Claude 状态 → 动画 + 气泡文本</div>
+  <table class="config-table" id="claude-state-table">
+    <tr><th>状态</th><th>动画</th><th>气泡文本 (逗号分隔)</th></tr>
+  </table>
+  <div class="section-title">猫咪行为状态 → 动画</div>
+  <table class="config-table" id="behavior-state-table">
+    <tr><th>状态</th><th>动画</th></tr>
+  </table>
+</div>
+
+<div class="panel" id="panel-test">
+  <div class="section-title">动画测试 + 速度调节 (点击播放)</div>
+  <div id="test-list"></div>
+  <div class="follow-row">
+    <label>跟随鼠标</label>
+    <div class="toggle"><input type="checkbox" id="opt-follow"><span class="slider"></span></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-deepseek">
+  <div class="section-title">DeepSeek 余额监控</div>
+  <div class="toggle-row"><label>显示余额面板</label><div class="toggle"><input type="checkbox" id="opt-balance"><span class="slider"></span></div></div>
+  <div class="toggle-row"><label>状态音效</label><div class="toggle"><input type="checkbox" id="opt-sound"><span class="slider"></span></div></div>
+  <div class="section-title">API Key</div>
+  <div class="key-row">
+    <input type="password" id="ds-key" placeholder="sk-..." autocomplete="off">
+    <button id="ds-save">保存</button>
+  </div>
+  <div class="ds-status" id="ds-status"></div>
+  <div class="ds-hint">key 仅保存在本地（~/.claude-tool-electron/pet-cache/settings.json），用于查询 api.deepseek.com/user/balance。余额每 60 秒自动刷新，点击桌宠上的余额面板可手动刷新。余额下降会累计为「今日已用」，充值/赠金不会冲抵。</div>
+</div>
+
+<script>
+var animNames = [];
+var animSpeeds = {};
+var stateAnimMap = {};
+var behaviorAnimMap = {};
+var statusMessages = {};
+
+document.querySelectorAll('.tab').forEach(function(t) {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(x) { x.classList.remove('active'); });
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+function updateConfig(key, value) {
+  if (window.electronAPI && window.electronAPI.configUpdate) {
+    window.electronAPI.configUpdate(key, value);
+  }
+}
+
+if (window.electronAPI && window.electronAPI.getConfigData) {
+  window.electronAPI.getConfigData().then(function(data) {
+    if (!data) { document.body.innerHTML = '<p style="color:red;padding:20px;">数据加载失败</p>'; return; }
+    animNames = data.allAnims;
+    animSpeeds = data.animSpeeds || {};
+    stateAnimMap = data.stateAnimMap || {};
+    behaviorAnimMap = data.behaviorAnimMap || {};
+    statusMessages = data.statusMessages || {};
+
+    buildSkinGrid(data.skins, data.settings.skin);
+    document.getElementById('opt-bubble').checked = data.settings.showBubble !== false;
+    document.getElementById('opt-tooltip').checked = data.settings.showTooltip !== false;
+    document.getElementById('opt-autowalk').checked = !!data.settings.autoWalk;
+    document.getElementById('opt-balance').checked = data.settings.showBalance !== false;
+    document.getElementById('opt-sound').checked = data.settings.soundEnabled !== false;
+    var dsKey = document.getElementById('ds-key');
+    var dsStatus = document.getElementById('ds-status');
+    dsKey.value = data.settings.deepseekApiKey || '';
+    document.getElementById('ds-save').addEventListener('click', function() {
+      var v = dsKey.value.trim();
+      updateConfig('deepseekApiKey', v);
+      dsStatus.textContent = v ? '已保存，正在刷新余额…' : '已清除 key';
+      setTimeout(function() { dsStatus.textContent = ''; }, 3000);
+    });
+    bindToggles();
+
+    buildClaudeStateTable(data.claudeStates);
+    buildBehaviorStateTable(data.behaviorStates);
+    buildTestList();
+  });
+}
+
+function buildSkinGrid(skins, currentSkin) {
+  var grid = document.getElementById('skin-grid');
+  for (var i = 0; i < skins.length; i++) {
+    (function(skin) {
+      var cell = document.createElement('div');
+      cell.className = 'skin-cell' + (skin.id === currentSkin ? ' active' : '');
+      var canvas = document.createElement('canvas');
+      canvas.width = 48; canvas.height = 48;
+      var name = document.createElement('div');
+      name.className = 'name'; name.textContent = skin.label;
+      cell.appendChild(canvas); cell.appendChild(name);
+      cell.addEventListener('click', function() {
+        document.querySelectorAll('.skin-cell').forEach(function(c) { c.classList.remove('active'); });
+        cell.classList.add('active');
+        updateConfig('skin', skin.id);
+      });
+      grid.appendChild(cell);
+      if (window.electronAPI && window.electronAPI.getSkinData) {
+        var pd = window.electronAPI.getSkinData(skin.id);
+        if (pd && pd.frames && pd.frames[0]) drawPreview(canvas, pd, 0);
+      }
+    })(skins[i]);
+  }
+}
+
+function drawPreview(canvas, petData, frameIdx) {
+  var ctx = canvas.getContext('2d');
+  var size = petData.size || [32, 32];
+  var frame = petData.frames[frameIdx];
+  var scale = Math.floor(Math.min(canvas.width / size[0], canvas.height / size[1]));
+  var ox = Math.floor((canvas.width - size[0] * scale) / 2);
+  var oy = Math.floor((canvas.height - size[1] * scale) / 2);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (var y = 0; y < size[1]; y++)
+    for (var x = 0; x < size[0]; x++) {
+      var rgba = petData.palette[frame.pixels[y][x]];
+      if (!rgba || rgba[3] === 0) continue;
+      ctx.fillStyle = 'rgba(' + rgba[0] + ',' + rgba[1] + ',' + rgba[2] + ',' + (rgba[3]/255) + ')';
+      ctx.fillRect(ox + x * scale, oy + y * scale, scale, scale);
+    }
+}
+
+function bindToggles() {
+  document.getElementById('opt-bubble').addEventListener('change', function() { updateConfig('showBubble', this.checked); });
+  document.getElementById('opt-tooltip').addEventListener('change', function() { updateConfig('showTooltip', this.checked); });
+  document.getElementById('opt-autowalk').addEventListener('change', function() { updateConfig('autoWalk', this.checked); });
+  document.getElementById('opt-follow').addEventListener('change', function() {
+    if (window.electronAPI && window.electronAPI.toggleFollowMouse) window.electronAPI.toggleFollowMouse(this.checked);
+  });
+  document.getElementById('opt-balance').addEventListener('change', function() { updateConfig('showBalance', this.checked); });
+  document.getElementById('opt-sound').addEventListener('change', function() { updateConfig('soundEnabled', this.checked); });
+}
+
+function buildClaudeStateTable(states) {
+  var table = document.getElementById('claude-state-table');
+  for (var i = 0; i < states.length; i++) {
+    var st = states[i];
+    var anim = stateAnimMap[st] || 'wash';
+    var msgs = (statusMessages[st] || []).join(', ');
+    var tr = document.createElement('tr');
+    var td1 = document.createElement('td'); td1.textContent = st; td1.style.color = '#a9b1d6';
+    var td2 = document.createElement('td');
+    var sel = createAnimSelect(anim); sel.dataset.state = st;
+    sel.addEventListener('change', function() {
+      stateAnimMap[this.dataset.state] = this.value;
+      updateConfig('stateAnimMap', stateAnimMap);
+    });
+    td2.appendChild(sel);
+    var td3 = document.createElement('td');
+    var inp = document.createElement('input'); inp.type = 'text'; inp.value = msgs; inp.dataset.state = st;
+    inp.addEventListener('change', function() {
+      statusMessages[this.dataset.state] = this.value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      updateConfig('statusMessages', statusMessages);
+    });
+    td3.appendChild(inp);
+    tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+    table.appendChild(tr);
+  }
+}
+
+function buildBehaviorStateTable(states) {
+  var table = document.getElementById('behavior-state-table');
+  for (var i = 0; i < states.length; i++) {
+    var st = states[i];
+    var anims = behaviorAnimMap[st];
+    var text = Array.isArray(anims) ? anims.join(', ') : (anims || 'wash');
+    var tr = document.createElement('tr');
+    var td1 = document.createElement('td'); td1.textContent = st; td1.style.color = '#a9b1d6';
+    var td2 = document.createElement('td');
+    var inp = document.createElement('input'); inp.type = 'text'; inp.value = text; inp.dataset.state = st;
+    inp.placeholder = '逗号分隔多个动画名';
+    inp.addEventListener('change', function() {
+      behaviorAnimMap[this.dataset.state] = this.value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      updateConfig('behaviorAnimMap', behaviorAnimMap);
+    });
+    td2.appendChild(inp);
+    tr.appendChild(td1); tr.appendChild(td2);
+    table.appendChild(tr);
+  }
+}
+
+function createAnimSelect(current) {
+  var sel = document.createElement('select');
+  for (var i = 0; i < animNames.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = animNames[i]; opt.textContent = animNames[i];
+    if (animNames[i] === current) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  return sel;
+}
+
+function buildTestList() {
+  var list = document.getElementById('test-list');
+  for (var i = 0; i < animNames.length; i++) {
+    (function(name) {
+      var speed = animSpeeds[name] || 0;
+      var row = document.createElement('div'); row.className = 'test-item';
+      var btn = document.createElement('div');
+      btn.className = 'play-btn'; btn.textContent = '播放';
+      var label = document.createElement('span'); label.className = 'anim-name'; label.textContent = name;
+      var range = document.createElement('input');
+      range.type = 'range'; range.min = 50; range.max = 1000; range.step = 10;
+      range.value = speed || 200; range.dataset.anim = name;
+      var val = document.createElement('span'); val.className = 'speed-val'; val.textContent = speed ? speed + 'ms' : '默认';
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.play-btn').forEach(function(b) { b.classList.remove('playing'); });
+        btn.classList.add('playing'); btn.textContent = '播放中';
+        if (window.electronAPI && window.electronAPI.configPlayAnim) window.electronAPI.configPlayAnim(name);
+      });
+      range.addEventListener('input', function() { this.nextElementSibling.textContent = this.value + 'ms'; });
+      range.addEventListener('change', function() {
+        animSpeeds[this.dataset.anim] = parseInt(this.value);
+        updateConfig('animSpeeds', animSpeeds);
+      });
+      row.appendChild(btn); row.appendChild(label); row.appendChild(range); row.appendChild(val);
+      list.appendChild(row);
+    })(animNames[i]);
+  }
+}
+</script>
+</body>
+</html>
